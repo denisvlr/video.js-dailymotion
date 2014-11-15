@@ -31,7 +31,13 @@
       // } else {
       //   this.player_.options().dmControls = true;
       // }
+      if (typeof this.player_.options().dmControls != 'undefined') {
+          var dmC = this.player_.options().dmControls;
 
+          if (dmC && this.player_.controls()){
+              this.player_.controls(false);
+          }
+      }
 
       // Copy the Javascript options if they exist
       if (typeof options.source !== 'undefined') {
@@ -112,7 +118,9 @@
 
 
       this.el_.src = 'http://www.dailymotion.com/services/oembed?' + videojs.Dailymotion.makeQueryString(this.params);
-
+      videojs.Dailymotion.apiReady = false;
+      videojs.Dailymotion.apiLoading = false;
+      window.DM = null;
       if (videojs.Dailymotion.apiReady) {
         this.loadApi();
       } else {
