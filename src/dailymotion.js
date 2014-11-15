@@ -16,7 +16,7 @@
     /** @constructor */
     init: function (player, options, ready) {
       videojs.MediaTechController.call(this, player, options, ready);
-
+      this.features = this.features || {};
       this.features.fullscreenResize = true;
 
       this.player_ = player;
@@ -93,7 +93,7 @@
         id: this.id_,
         autoplay: (this.player_.options().autoplay) ? 1 : 0,
         chromeless: (this.player_.options().dmControls) ? 0 : 1,
-        html: 1,
+        //html: 1,
         info: 1,
         logo: 1,
         controls: 'html',
@@ -139,39 +139,39 @@
           videojs.Dailymotion.apiLoading = true;
         }
       }
+
+      this.on('dispose', function() {
+        if (this.dmPlayer) {
+          this.pause();
+          for (var i = 0; i < this.dmPlayer.listeners.length; i++) {
+            var listener = this.dmPlayer.listeners[i];
+            this.dmPlayer.removeEventListener(listener.event, listener.func);
+          }
+          this.dmPlayer = null;
+        }
+
+        // Remove the poster
+        this.playerEl_.querySelectorAll('.vjs-poster')[0].style.backgroundImage = 'none';
+
+        // If still connected to the DOM, remove it.
+        var el = document.getElementById(this.id_);
+        if (el.parentNode) {
+          el.parentNode.removeChild(el);
+        }
+
+        if(typeof this.player_.loadingSpinner !== 'undefined') {
+          this.player_.loadingSpinner.hide();
+        }
+        if(typeof this.player_.bigPlayButton !== 'undefined') {
+          this.player_.bigPlayButton.hide();
+        }
+
+        videojs.MediaTechController.prototype.dispose.call(this);
+      });
     }
   });
 
   videojs.Dailymotion.prototype.params = [];
-
-  videojs.Dailymotion.prototype.dispose = function () {
-    if (this.dmPlayer) {
-      this.pause();
-      for (var i = 0; i < this.dmPlayer.listeners.length; i++) {
-        var listener = this.dmPlayer.listeners[i];
-        this.dmPlayer.removeEventListener(listener.event, listener.func);
-      }
-      this.dmPlayer = null;
-    }
-
-    // Remove the poster
-    this.playerEl_.querySelectorAll('.vjs-poster')[0].style.backgroundImage = 'none';
-
-    // If still connected to the DOM, remove it.
-    var el = document.getElementById(this.id_);
-    if (el.parentNode) {
-      el.parentNode.removeChild(el);
-    }
-
-    if(typeof this.player_.loadingSpinner !== 'undefined') {
-      this.player_.loadingSpinner.hide();
-    }
-    if(typeof this.player_.bigPlayButton !== 'undefined') {
-      this.player_.bigPlayButton.hide();
-    }
-
-    videojs.MediaTechController.prototype.dispose.call(this);
-  };
 
   videojs.Dailymotion.prototype.src = function (src) {
     if (typeof src !== 'undefined') {
@@ -187,9 +187,7 @@
   videojs.Dailymotion.prototype.play = function () {
     if (this.isReady_) {
       this.player_.bigPlayButton.hide();
-      if(typeof this.player_.loadingSpinner !== 'undefined') {
-        this.player_.loadingSpinner.show();
-      }
+      this.player_.posterImage.hide();
       this.dmPlayer.play();
     } else {
       // We will play it when the API will be ready
