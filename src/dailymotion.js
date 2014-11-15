@@ -22,14 +22,15 @@
       this.player_ = player;
       this.playerEl_ = document.getElementById(player.id());
 
-      if (typeof this.player_.options().dmControls !== 'undefined') {
-        var dmC = this.player_.options().dmControls = parseInt(this.player_.options().dmControls) &&
-          this.player_.controls_;
+      // if (typeof this.player_.options().dmControls !== 'undefined') {
+      //   var dmC = this.player_.options().dmControls;
 
-        if (dmC && this.player_.controls_) {
-          this.player_.controls(!dmC);
-        }
-      }
+      //   if (dmC && this.player_.controls_) {
+      //     this.player_.controls(!dmC);
+      //   }
+      // } else {
+      //   this.player_.options().dmControls = true;
+      // }
 
 
       // Copy the Javascript options if they exist
@@ -40,6 +41,7 @@
           }
         }
       }
+      this.player_.options().poster = undefined;
 
       var self = this;
 
@@ -97,7 +99,6 @@
       if (typeof this.params.list === 'undefined') {
         delete this.params.list;
       }
-
       // Make autoplay work for iOS
       if (this.player_.options().autoplay) {
         this.player_.bigPlayButton.hide();
@@ -124,7 +125,7 @@
           tag.onerror = function (e) {
             self.onError(e);
           };
-          tag.src = 'http://api.dmcdn.net/all.js';
+          tag.src = '//api.dmcdn.net/all.js';
           var firstScriptTag = document.getElementsByTagName('script')[0];
           firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
           videojs.Dailymotion.apiLoading = true;
@@ -177,6 +178,10 @@
 
   videojs.Dailymotion.prototype.play = function () {
     if (this.isReady_) {
+      this.player_.bigPlayButton.hide();
+      if(typeof this.player_.loadingSpinner !== 'undefined') {
+        this.player_.loadingSpinner.show();
+      }
       this.dmPlayer.play();
     } else {
       // We will play it when the API will be ready
@@ -185,6 +190,7 @@
       if (!this.player_.options.dmControls) {
         // Keep the big play button until it plays for real
         this.player_.bigPlayButton.show();
+
       }
     }
   };
@@ -264,8 +270,19 @@
   videojs.Dailymotion.prototype.onReady = function () {
     this.isReady_ = true;
     this.player_.trigger('techready');
+    if(typeof this.player_.loadingSpinner !== 'undefined') {
+      this.player_.loadingSpinner.hide();
+    }
 
     // Hide the poster when ready because Dailymotion has it's own
+    if (this.player_.options().dmControls){
+      this.player_.bigPlayButton.hide();
+      this.player_.posterImage.hide();
+    } else {
+      this.player_.bigPlayButton.show();
+    }
+
+
     this.triggerReady();
     this.player_.trigger('durationchange');
 
@@ -324,14 +341,18 @@
           break;
 
         case 'ended':
-
-          if (!this.player_.options().dmControls) {
-            this.player_.bigPlayButton.show();
-          }
+          //this.player_.bigPlayButton.show();
           break;
 
         case 'play':
         case 'playing':
+          this.player_.trigger('timeupdate');
+          this.player_.trigger('durationchange');
+          this.player_.trigger('playing');
+          this.player_.trigger('play');
+          if (!this.player_.options().dmControls){
+            this.player_.addClass('vjs-lock-showing');
+          }
           break;
 
         case 'pause':
@@ -341,7 +362,9 @@
 
         case 'timeupdate':
           // Hide the waiting spinner since Dailymotion has its own
-          this.player_.loadingSpinner.hide();
+          if(typeof this.player_.loadingSpinner !== 'undefined') {
+            this.player_.loadingSpinner.hide();
+          }
           break;
         case 'progress':
           break;
